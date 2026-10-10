@@ -250,6 +250,22 @@ def _num(value: object) -> int | float | None:
     """
     if isinstance(value, bool):
         return None
+def _render_global_usage(s: _Stats) -> str | None:
+    """Render global token usage compared to maximum context size."""
+    if not getattr(s.valves, "show_global_tokens", False):
+        return None
+    cumulative = s.tokens.get("cumulative")
+    size = s.ctx.get("size")
+    if cumulative is not None and size is not None and size > 0:
+        pct = int((cumulative / size) * 100)
+        cumulative_str = _fmt_count(s.valves, cumulative)
+        size_str = _format_k(size)
+        body = f"≈ {cumulative_str}/{size_str} ({pct}%)"
+        icon = _icon(s.valves, "tokens_total")
+        return _with_icon(icon, body)
+    return None
+
+
     if isinstance(value, int):
         return value
     if isinstance(value, float) and math.isfinite(value):
@@ -863,6 +879,7 @@ class Filter:
         show_audio_tokens: bool = Field(default=False, description="Display audio tokens (gpt-4o-audio etc.).")
         show_model_name: bool = Field(default=True, description="Display base model name for workspace models.")
         show_data_source: bool = Field(default=False, description="Append [API]/[est.] to indicate token count source.")
+        show_global_tokens: bool = Field(default=True, description="Display a summary of global token usage compared to max usage/limit.")
         display_order: str = Field(
             default=", ".join(_DEFAULT_ORDER),
             description=(
